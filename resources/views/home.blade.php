@@ -28,7 +28,7 @@
 <form method="post" action="/home" class="form-horizontal" enctype="multipart/form-data">
 {!! csrf_field() !!}
 
-<textarea class="form-control" name="publication" value="{{old('publication')}}" placeholder="Comparte algo">
+<textarea class="form-control" name="publication" value="{!!old('publication')!!}" placeholder="Comparte algo">
 {!!$errors->first('publication','<span class=error>:message</span>')!!}
 </textarea>
 
