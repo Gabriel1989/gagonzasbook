@@ -1,0 +1,111 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Notifications\FriendRequest;
+use App\User;
+use Illuminate\Http\Request;
+use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+
+class FriendsController extends Controller {
+
+	public function __construct() {
+		$this->middleware('auth');
+	}
+
+	public function listFriendsAjax(Request $request) {
+		if ($request->ajax()) {
+			$requestFiltered = $request->friendRequest;
+
+			if ($requestFiltered == "") {
+				return null;
+			}
+
+			$usersTobecomeFriends = User::orWhere('name', 'like', '%'.substr($requestFiltered, 0).'%')->get();
+
+			foreach ($usersTobecomeFriends as $user) {
+				$imagesFace  = $user->faceuser->avatar;
+				echo $images = "<img src=\"".Storage::url($imagesFace)."\"width=\"50\" height=\"50\" class=\"img-circle img-responsive\"></img>";
+
+				echo $formAddFriend = "<form action='/addFriend/friends/ZLzlbh2UIhfeZ6AkPVT85v' method='POST'>";
+
+				echo csrf_field();
+
+				echo "<span><strong>".$user->name."</strong></span>";
+				echo "&nbsp;&nbsp;";
+				echo "<input type=\"hidden\" name=\"yVi3XjqkTn7K7kwG2VVMfHrXEvX8\" value=\"".$user->id."\">";
+
+				echo "<input type=\"hidden\" name=\"pIw9xXz67bZMsHhVbP2\" value=\"".auth()->user()->id."\">";
+				echo "<button style=\"font-size:12px\" class=\"btn btn-success\"><span class=\"glyphicon glyphicon-user\"></span>Agregar amigo</button>";
+				echo "<br>";
+
+				echo "</form>";
+			}
+
+		}
+
+	}
+
+	public function addFriendToUser(Request $request) {
+		//dd($request->all());
+		$this->validate($request, [
+				'_token'                       => 'required',
+				'yVi3XjqkTn7K7kwG2VVMfHrXEvX8' => 'required|exists:users,id',
+				'pIw9xXz67bZMsHhVbP2'          => 'required|exists:users,id'
+			]);
+
+		$receiver = User::find($request->yVi3XjqkTn7K7kwG2VVMfHrXEvX8);
+
+		$sender = User::with('faceuser')->where('id', auth()->user()->id)->get();
+
+		foreach ($sender as $s) {
+			$avatarSender = $s->faceuser->avatar;
+		}
+
+		$message = "El usuario ".auth()->user()->name." te ha enviado una solicitud de amistad";
+
+		//dd($message);
+
+		$id_follower = $request->pIw9xXz67bZMsHhVbP2;
+
+		$id_followed = $request->yVi3XjqkTn7K7kwG2VVMfHrXEvX8;
+
+		$receiver->notify(new FriendRequest($message, $id_follower, $id_followed, $avatarSender));
+
+		DB::table('confirmfriendsnoty')->insert(
+
+			['id_user_follower' => $request->pIw9xXz67bZMsHhVbP2, 'id_user_followed' => $request->yVi3XjqkTn7K7kwG2VVMfHrXEvX8,
+				'created_at'       => \Carbon\Carbon::now(), # \Datetime()
+				'updated_at'       => \Carbon\Carbon::now()# \Datetime()
+			]
+
+		);
+
+		return back()->with('flash', 'Tu solicitud ha sido enviada');
+
+	}
+
+	public function confirmFriendshipToUser(Request $request) {
+		DatabaseNotification::find($request->id_noty)->markAsRead();
+
+		$userFollower = User::where('id', $request->follower_id)->get();
+
+		foreach ($userFollower as $uf) {
+			$ufName = $uf->name;
+		}
+
+		DB::table('friendsfacesusers')->insert([
+				['user_id' => $request->follower_id, 'id_facefriend' => $request->followed_id, 'created_at' => \Carbon\Carbon::now(), 'updated_at' => \Carbon\Carbon::now()],
+				['user_id' => $request->followed_id, 'id_facefriend' => $request->follower_id, 'created_at' => \Carbon\Carbon::now(), 'updated_at' => \Carbon\Carbon::now()]
+			]);
+
+		return back()->with('flash', 'Has aceptado la solicitud. Revisa el perfil de '.$ufName.'.');
+	}
+
+	public function deleteFriendToUser() {
+
+	}
+
+}
