@@ -47,3 +47,5 @@ PUSHER_APP_SECRET=
 </pre>
 
 <strong>El archivo de base de datos no deben ejecutarse todos los insert, puesto que las publicaciones del usuario de la red social y del usuario de chat incluyen imágenes y video. Las publicaciones existentes en el archivo sql enlazan a archivos en storage que no existen, por lo que habrán problemas al visualizar las publicaciones. Es recomendable crear las tablas `chatcomments`, `publications_users` y `face_user` sin datos por defecto</strong>
+
+<strong>Además es recomendable realizar un php artisan storage:link para sincronizar la carpeta public a la carpeta storage con un enlace simbólico para el correcto almacenamiento de los archivos con publicaciones de imagen y video</strong>
